@@ -163,7 +163,7 @@ def create_post(r,me,title):
 	return submission.id
 
 
-def edit_post(conn,cursor):
+def edit_post(r,me,conn,cursor,post_id):
 	# The purpose of this function is to read the table of saved posts in the
 	# database, and then create the post necessary.
 	# To do this, the saves need to be loaded from the DB, along with the
@@ -211,6 +211,13 @@ def edit_post(conn,cursor):
 	for cat in formatted_posts:
 		formatted_strings.append("""\n""".join(cat))
 
+	# Creating the tables
+	body = []
+	for num,table in enumerate(formatted_strings):
+		body.append('#{}'.format(cats[num]))
+		body.append(table)
+
+	return """\n""".join(body)
 
 
 
@@ -224,4 +231,4 @@ if __name__ == '__main__':
 	conn,cursor = init_DB()
 	old_ids = get_old_ids(conn,cursor)
 	get_new_saves(me,old_ids,conn,cursor,lim = 5)
-	edit_post(conn,cursor)
+	check_post(r,me,conn,cursor)
