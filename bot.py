@@ -48,8 +48,7 @@ def init_DB():
 		cursor.executemany("""INSERT INTO categories VALUES (?,?)""", cat_to_db)
 		conn.commit()
 
-		# print("Tables created")
-	# nothing if it's already there
+	# do nothing if it's already there
 	except sqlite3.OperationalError:
 		# print("Tables already created")
 		pass
@@ -124,24 +123,27 @@ def check_post(r,me,conn,cursor):
 	cursor.execute("SELECT * FROM current_post")
 	data = cursor.fetchall()
 
-	# if there's nothing in the DB we create a new one
+	# if there's nothing in the DB we create a new post
 	if len(data)  == 0:
 		new_id = create_post(r,me,title)
 		edit_post(r,me,conn,cursor,new_id)
 		cursor.execute("""INSERT INTO current_post VALUES (?,?)""", [new_id,title])
 		conn.commit()
 		print('No post saved in DB. New post created. ID: {}'.format(new_id))
+	# if there's something in the DB, we check if it's archived or not
 	else:
 		post_id = data[0][0]
 		post_title = data[0][1]
 
 		sub = r.submission(id = post_id)
+		# if it's archived we create a new post
 		if sub.archived:
 			new_id = create_post(r,me,post_title)
 			edit_post(r,me,conn,cursor,new_id)
 			cursor.execute("""INSERT INTO current_post VALUES (?,?)""", [new_id,post_title])
 			conn.commit()
 			print("Post archived. New post created. ID: {}".format(new_id))
+		# otherwise we just edit the existing one
 		else:
 			edit_post(r,me,conn,cursor,post_id)
 			print("Post edited.")
