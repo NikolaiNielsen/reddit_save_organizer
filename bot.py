@@ -212,28 +212,35 @@ def edit_post(r,me,conn,cursor,post_id):
 		else:
 			sorted_posts[-1].append(post)
 
-	# Now to create the lines for the post. First we
+	# Now to create the lines for the post. First create a list of n+1 empty
+	# lists, and pupulate each of those sublists with strings. One for each
+	# saved post.
 	formatted_posts = [[] for x in range(len(cats)+1)]
 	for num,cat in enumerate(sorted_posts):
 		for post in cat:
 			iid,title,short,link,num_comments,sub = post
 			formatted_posts[num].append("""[{}]({}) ({}) | [{}]({}) | /r/{}""".format(title,link,num_comments,iid,short,sub))
 
+	# These sublists are then converted to a full string, separated by newline
+	# characters.
 	formatted_strings = []
 	for cat in formatted_posts:
 		formatted_strings.append("""\n""".join(cat))
 
-	# Creating the tables
+	# The full tables are then created. First the category title, then the
+	# table title row, seperator and lastly the table data itself.
 	body = []
 	for num,table in enumerate(formatted_strings):
 		try:
-			body.append('#{}'.format(cats[num]))
+			body.append('\n#{}'.format(cats[num]))
 		except IndexError:
 			body.append("#Other")
 		body.append('Post | Comments | Subreddit')
 		body.append("---|---|----")
 		body.append(table)
 
+	# The individual elements are then joined up into a full string, and the
+	# post is edited with this body
 	body =  """\n""".join(body)
 	submission = r.submission(id = post_id)
 	submission.edit(body)
