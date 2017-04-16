@@ -11,6 +11,7 @@ categories = {"python": "python,learnprogramming,dailyprogrammer,learnpython",
 			  "life stuff": "getdisciplined,lifeprotips,anxiety,meditation"}
 
 subname = "slowboardtest"
+title = "Save organizer"
 
 def bot_login():
 	# We log into reddit
@@ -122,15 +123,28 @@ def check_post(r,me,conn,cursor):
 	# We get the current post
 	cursor.execute("SELECT * FROM current_post")
 	data = cursor.fetchall()
-	post_id = data[0][0]
-	post_title = data[0][1]
 
-	sub = r.submission(id = post_id)
-	if sub.archived:
-		new_id = create_post(r,me,post_title)
+	# if there's nothing in the DB we create a new one
+	if len(data)  == 0:
+		new_id = create_post(r,me,title)
 		edit_post(r,me,conn,cursor,new_id)
+		cursor.execute("""INSERT INTO current_post VALUES (?,?)""", [new_id,title])
+		conn.commit()
+		print('No post saved in DB. New post created. ID: {}'.format(new_id))
 	else:
-		edit_post(r,me,conn,cursor,post_id)
+		post_id = data[0][0]
+		post_title = data[0][1]
+
+		sub = r.submission(id = post_id)
+		if sub.archived:
+			new_id = create_post(r,me,post_title)
+			edit_post(r,me,conn,cursor,new_id)
+			cursor.execute("""INSERT INTO current_post VALUES (?,?)""", [new_id,post_title])
+			conn.commit()
+			print("Post archived. New post created. ID: {}".format(new_id))
+		else:
+			edit_post(r,me,conn,cursor,post_id)
+			print("Post edited.")
 
 
 # Actually, this might not be needed anyway. I can just keep a running tally
@@ -159,7 +173,7 @@ def read_post(r,me,conn,cursor):
 def create_post(r,me,title):
 	# Just creates the new self post and returns the ID.
 	subreddit = r.subreddit(subname)
-	submission = subreddit.submit(title,selftext="")
+	submission = subreddit.submit(title,selftext="hello")
 	return submission.id
 
 
@@ -203,9 +217,7 @@ def edit_post(r,me,conn,cursor,post_id):
 	for num,cat in enumerate(sorted_posts):
 		for post in cat:
 			iid,title,short,link,num_comments,sub = post
-			formatted_posts[num].append("""
-				[{}]({}) ({}) | [link]({})| /r/{} | {}
-				""".format(title,short,num_comments,link,sub,iid))
+			formatted_posts[num].append("""[{}]({}) ({}) | [{}]({}) | /r/{}""".format(title,link,num_comments,iid,short,sub))
 
 	formatted_strings = []
 	for cat in formatted_posts:
@@ -214,10 +226,17 @@ def edit_post(r,me,conn,cursor,post_id):
 	# Creating the tables
 	body = []
 	for num,table in enumerate(formatted_strings):
-		body.append('#{}'.format(cats[num]))
+		try:
+			body.append('#{}'.format(cats[num]))
+		except IndexError:
+			body.append("#Other")
+		body.append('Post | Comments | Subreddit')
+		body.append("---|---|----")
 		body.append(table)
 
-	return """\n""".join(body)
+	body =  """\n""".join(body)
+	submission = r.submission(id = post_id)
+	submission.edit(body)
 
 
 
@@ -230,5 +249,5 @@ if __name__ == '__main__':
 	r,me = bot_login()
 	conn,cursor = init_DB()
 	old_ids = get_old_ids(conn,cursor)
-	get_new_saves(me,old_ids,conn,cursor,lim = 5)
+	get_new_saves(me,old_ids,conn,cursor,lim = 25)
 	check_post(r,me,conn,cursor)
