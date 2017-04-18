@@ -13,7 +13,11 @@ categories = {"python": "python,learnprogramming,dailyprogrammer,learnpython",
 subname = "slowboardtest"
 title = "Save organizer"
 
+def sep():
+	print("----------\n")
+
 def bot_login():
+	print("login in.")
 	# We log into reddit
 	r = praw.Reddit(username = config.username,
 				password = config.password,
@@ -21,6 +25,7 @@ def bot_login():
 				client_secret = config.client_secret,
 				user_agent = config.user_agent)
 	print('logged in!')
+	sep()
 
 	# and fetch the user
 	me = r.user.me()
@@ -28,6 +33,7 @@ def bot_login():
 
 
 def init_DB():
+	print("Initializing databases")
 	# We open the database (and create the table, if it's not already there)
 	conn = sqlite3.connect('redditSaves.db')
 	cursor = conn.cursor()
@@ -47,19 +53,24 @@ def init_DB():
 		cat_to_db = [(k,v) for k,v in categories.items()]
 		cursor.executemany("""INSERT INTO categories VALUES (?,?)""", cat_to_db)
 		conn.commit()
+		print("No tables found. Creating new ones.")
 
 	# do nothing if it's already there
 	except sqlite3.OperationalError:
-		# print("Tables already created")
+		print("Tables already created")
 		pass
 
 	print("Database initialized")
+	sep()
 	return conn,cursor
 
 
 def get_old_ids(conn,cursor):
 	# Get the old saved ids
+	print("Fetching saves from DB")
 	cursor.execute("SELECT id FROM saves")
+	print("Saves fetched")
+	sep()
 
 	# fetchall() returns a list of tuples, each with a string and NULL object
 	# We use a list comprehension to make a new list, which only has the
@@ -68,6 +79,7 @@ def get_old_ids(conn,cursor):
 
 
 def get_new_saves(me,old,conn,cursor,lim = 25):
+	print("Retrieving saves from reddit")
 	# Get x number of saved items. Check which ones are comments and which
 	# and which are submissions. If submission isn't in DB, put it in there
 
@@ -114,10 +126,12 @@ def get_new_saves(me,old,conn,cursor,lim = 25):
 	cursor.executemany("""INSERT INTO saves VALUES (?,?,?,?,?,?)""", toDatabase)
 	conn.commit()
 	print("{} posts committed to table 'saves'".format(len(toDatabase)))
+	sep()
 
 
 def check_post(r,conn,cursor):
 	# We get the current post
+	print("Checking post")
 	cursor.execute("SELECT * FROM current_post")
 	data = cursor.fetchall()
 
@@ -145,10 +159,9 @@ def check_post(r,conn,cursor):
 		else:
 			edit_post(r,conn,cursor,post_id)
 			print("Post edited.")
+	sep()
 
 
-# Actually, this might not be needed anyway. I can just keep a running tally
-# in the database, and just edit the submission from there
 def read_post(r,post_id):
 
 	# From when conn,cursor was also arguments
@@ -179,6 +192,7 @@ def read_post(r,post_id):
 			last_rows.append(num-1)
 
 	return title,body,lines,categories,first_rows,last_rows
+
 
 def populate_db(r,conn,cursor,post_id):
 	title,body,lines,categories,first_rows,last_rows = read_post(r,post_id)
