@@ -257,12 +257,12 @@ def edit_post(r,me,conn,cursor,post_id):
 	body = []
 	for num,table in enumerate(formatted_strings):
 		try:
-			body.append('\n#{}'.format(cats[num]))
+			body.append('#{}'.format(cats[num]))
 		except IndexError:
-			body.append("\n#Other")
+			body.append("#Other")
 		body.append('Post | Comments | Subreddit')
 		body.append("---|---|----")
-		body.append(table)
+		body.append("{}\n".format(table))
 
 	# The individual elements are then joined up into a full string, and the
 	# post is edited with this body
@@ -280,7 +280,7 @@ def edit_post(r,me,conn,cursor,post_id):
 if __name__ == '__main__':
 	r,me = bot_login()
 	conn,cursor = init_DB()
-	# old_ids = get_old_ids(conn,cursor)
-	# get_new_saves(me,old_ids,conn,cursor,lim = None)
-	# check_post(r,me,conn,cursor)
+	old_ids = get_old_ids(conn,cursor)
+	get_new_saves(me,old_ids,conn,cursor,lim = None)
+	check_post(r,me,conn,cursor)
 	read_post(r,me,conn,cursor)
