@@ -7,7 +7,7 @@ import pprint as pp
 
 categories = {"python": "python,learnprogramming,dailyprogrammer,learnpython",
 			  "asoiaf": "asoiaf",
-			  "entertainment": "anime,games,gamedeals,lowendgamer,patientgamers,fallout",
+			  "entertainment": "anime,games,gamedeals,lowendgaming,patientgamers,fallout",
 			  "life stuff": "getdisciplined,lifeprotips,anxiety,meditation"}
 
 subname = "slowboardtest"
@@ -158,19 +158,42 @@ def read_post(r,me,conn,cursor):
 	post_id = data[0][0]
 	post_title = data[0][1]
 
-	p = r.submission(id = post)
-	text = p.selftext
+	p = r.submission(id = post_id)
+	body = p.selftext
+	lines = body.split('\n')
+	ppp = pp.PrettyPrinter(width = 1000)
+	ppp.pprint(lines)
+	last_rows = []
+	first_rows = []
+	categories = []
+
+	# for num,text in enumerate(lines):
+
+
+	# 	if len(text) != 0:
+	# 		if text[0] == "#":
+	# 			print("Found the title:")
+	# 			print(text[1:])
+	# 			print(lines[num+3])
+	# 			first_rows.append(num+3)
+	# 			categories.append(text[1:])
+	# 	else:
+	# 		print("Found the last rows:")
+	# 		print(lines[num-1])
+	# 		last_rows.append(num-1)
+
+
 
 	# This regex searches for a new line charactor, followed by 3 times (some amount of
 	# words and spaces and a vertical bar) and lastly two newline characters.
-	re_last_row = re.compile(r"""(\n[A-Za-z0-9 '"]*\|[A-Za-z0-9 ]*\|[A-Za-z0-9 ]*)(\n)(\n)""")
-	last_rows = re_last_row.findall(text)
+	# re_last_row = re.compile(r"""(\n[A-Za-z0-9 '"]*\|[A-Za-z0-9 ]*\|[A-Za-z0-9 ]*)(\n)(\n)""")
+	# last_rows = re_last_row.findall(body)
 
-	# This regex searches for the titles of the table.
-	re_title = re.compile(r"""#([A-Za-z0-9 '"]*)\n""")
-	titles = re_title.findall(text)
+	# # This regex searches for the titles of the table.
+	# re_title = re.compile(r"""#([A-Za-z0-9 '"]*)\n""")
+	# titles = re_title.findall(body)
 
-	return text,titles,last_rows
+	return body,lines,categories,first_rows,last_rows
 
 def create_post(r,me,title):
 	# Just creates the new self post and returns the ID.
@@ -236,7 +259,7 @@ def edit_post(r,me,conn,cursor,post_id):
 		try:
 			body.append('\n#{}'.format(cats[num]))
 		except IndexError:
-			body.append("#Other")
+			body.append("\n#Other")
 		body.append('Post | Comments | Subreddit')
 		body.append("---|---|----")
 		body.append(table)
@@ -257,6 +280,7 @@ def edit_post(r,me,conn,cursor,post_id):
 if __name__ == '__main__':
 	r,me = bot_login()
 	conn,cursor = init_DB()
-	old_ids = get_old_ids(conn,cursor)
-	get_new_saves(me,old_ids,conn,cursor,lim = 25)
-	check_post(r,me,conn,cursor)
+	# old_ids = get_old_ids(conn,cursor)
+	# get_new_saves(me,old_ids,conn,cursor,lim = None)
+	# check_post(r,me,conn,cursor)
+	read_post(r,me,conn,cursor)
