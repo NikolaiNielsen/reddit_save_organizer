@@ -16,6 +16,7 @@ title = "Save organizer"
 def sep():
 	print("----------\n")
 
+
 def bot_login():
 	print("login in.")
 	# We log into reddit
@@ -158,7 +159,8 @@ def check_post(r,conn,cursor):
 		# otherwise we just edit the existing one
 		else:
 			edit_post(r,conn,cursor,post_id)
-			print("Post edited.")
+			print("Post found and edited.")
+
 	sep()
 
 
@@ -181,21 +183,26 @@ def read_post(r,post_id):
 	for num,text in enumerate(lines):
 		if len(text) != 0:
 			if text[0] == "#":
-				print("Found the title:")
-				print(text[1:])
-				print(lines[num+3])
+				# print("Found the title:")
+				# print(text[1:])
+				# print(lines[num+3])
 				first_rows.append(num+3)
 				categories.append(text[1:])
 		else:
-			print("Found the last rows:")
-			print(lines[num-1])
-			last_rows.append(num-1)
+			# print("Found the last rows:")
+			# print(lines[num-1])
+			last_rows.append(num)
 
-	return title,body,lines,categories,first_rows,last_rows
+	post_lines = []
+	for n in range(0,len(last_rows)):
+		for i in lines[first_rows[n]:last_rows[n]]:
+			post_lines.append(i)
+
+	return title,post_id,categories,post_lines
 
 
 def populate_db(r,conn,cursor,post_id):
-	title,body,lines,categories,first_rows,last_rows = read_post(r,post_id)
+	title,post_id,categories,post_lines = read_post(r,post_id)
 
 
 def create_post(r,title):
@@ -277,7 +284,7 @@ def edit_post(r,conn,cursor,post_id):
 if __name__ == '__main__':
 	r,me = bot_login()
 	conn,cursor = init_DB()
-	old_ids = get_old_ids(conn,cursor)
-	get_new_saves(me,old_ids,conn,cursor,lim = None)
-	check_post(r,conn,cursor)
-	# populate_db(r,conn,cursor,"661mz0")
+	# old_ids = get_old_ids(conn,cursor)
+	# get_new_saves(me,old_ids,conn,cursor,lim = None)
+	# check_post(r,conn,cursor)
+	populate_db(r,conn,cursor,"661mz0")
