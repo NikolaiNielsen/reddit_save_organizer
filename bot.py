@@ -203,6 +203,34 @@ def read_post(r,post_id):
 
 def populate_db(r,conn,cursor,post_id):
 	title,post_id,categories,post_lines = read_post(r,post_id)
+	# The lines in the table of the post is formatted like:
+	# [title](url) (num_comments) | [id](shortlink) | /r/subreddit
+	# Prototype Regex:
+	# (\[[A-Za-z 0-9,.?\-\|\/\\_\[\]\(\)\{\}:;!]*\])(\([a-zA-Z0-9:/.\-?=]*\)) (\([0-9]*\)) \| (\[[A-Za-z 0-9]*\])(\([a-zA-Z0-9:/.\-?=]*\)) \| \/r\/([a-zA-Z]*)
+	# Prototype 2
+	# (\[[\w\s.,!?:;<>\\\/\-\{\[\]\}\(\)]*\])(\([a-zA-Z0-9:/.\-?=]*\)) (\([0-9]*\)) \| (\[[A-Za-z 0-9]*\])(\([a-zA-Z0-9:/.\-?=]*\)) \| \/r\/([a-zA-Z]*)
+	# Prototype 3, now with proper wildcards
+	# \[(.*)\]\((.*)\) \((\d*)\) \| \[(.*)\]\((.*)\) \| \/r\/(\w*)
+	table_reg = re.compile(r'\[(.*)\]\((.*)\) \((\d*)\) \| \[(.*)\]\((.*)\) \| \/r\/(\w*)')
+	saves = []
+	for line in post_lines:
+		# What we need (in order)
+		# - post id (id) (group 3)
+		# - post title (title) (group 0)
+		# - link to the post (shortlink) (group 4)
+		# - link to the "link" (url) (group 1)
+		# - number of comments (num_comments) (group 2)
+		# - Subreddit (subreddit) (group 5)
+		s = table_reg.findall(line)[0]
+		toDatabase = (s[3],s[0],s[4],s[1],s[2],s[5])
+		saves.append(toDatabase)
+
+	cursor.executemany("""INSERT INTO saves VALUES (?,?,?,?,?,?)""", saves)
+	conn.commit()
+	print("{} posts committed to table 'saves'".format(len(saves)))
+	cursor.execute("""INSERT INTO current_post VALUES (?,?)""", (post_id,title))
+	conn.commit()
+	print("Current post details commited to table 'current_post'")
 
 
 def create_post(r,title):
@@ -287,4 +315,4 @@ if __name__ == '__main__':
 	# old_ids = get_old_ids(conn,cursor)
 	# get_new_saves(me,old_ids,conn,cursor,lim = None)
 	# check_post(r,conn,cursor)
-	populate_db(r,conn,cursor,"661mz0")
+	# populate_db(r,conn,cursor,"661mz0")
