@@ -320,53 +320,45 @@ def edit_post(r,conn,cursor,post_id):
     comms = create_comments("""\n""".join(body).split('\n'))
 
     # create the main post
-    bodyStr = """\n""".join(comms[0])
+    bodyStr = comms[0]
     submission = r.submission(id = post_id)
     submission.edit(bodyStr)
 
     # submit the comments with the rest of the saves
     for com in comms[1:]:
-        comment = """\n""".join(com)
-        submission.reply(comment)
+        submission.reply(com)
 
 
 
 def create_comments(l):
     # initialize variables needed
-    length = 0
-    commentLists = [[]]
-    comCount = 0
-    startNum = 0
+    commentLists = []
     maxLength = 40000
     # loop over all of the lines in the list l
+    s = ""
     for num, line in enumerate(l):
         # record the cummulative length
-        length += len(line)
+        slen = len(s)
+        length = len(line)
 
         # if we encounter a new category (header), set the category
         if len(line) != 0 and line[0] == "#":
             cat = line[1:]
 
-        # if we're over 10K (40K for post) characters, start new comment
-        if length >= maxLength:
+        # if we're under 10K (40K for post) characters, add the line to the comment
+        if slen+length <= maxLength:
+            s = """{}\n{}""".format(s,line)
+        # if not, then we start a new comment
+        else:
+            # Append the previous string to the list of comments
+            commentLists.append(s)
+
+            # Start the new comment
+            s = """#{}\nPost | Comments | Subreddit\n---|---|----"""
+
             # Change max length from post to comments
             maxLength = 10000
 
-            # Put the links in the current comment and create a new one
-
-            commentLists[comCount] = commentLists[comCount] + l[startNum:num]
-            commentLists.append(
-                ['#{}'.format(cat), 'Post | Comments | Subreddit',
-                 '---|---|----'])
-
-            # Increase Comment count
-            comCount += 1
-
-            # Reset startNum
-            startNum = num
-
-            # Reset length
-            length = len(commentLists[comCount])
 
     return commentLists
 
@@ -376,6 +368,6 @@ if __name__ == '__main__':
     r,me = bot_login()
     conn,cursor = init_DB()
     old_ids = get_old_ids(conn,cursor)
-    # get_new_saves(me,old_ids,conn,cursor,lim = None)
+    get_new_saves(me,old_ids,conn,cursor,lim = None)
     check_post(r,conn,cursor)
     # populate_db(r,conn,cursor,"661mz0")
